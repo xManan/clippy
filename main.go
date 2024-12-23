@@ -10,6 +10,7 @@ import (
 type PageData struct {
     Latest string
     History []string
+    BaseUrl string
 }
 
 var pageData PageData
@@ -24,7 +25,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
     <title>Clippy</title>
 </head>
 <body>
-    <form method="POST" action="/update">
+    <form method="POST" action="{{ .BaseUrl }}/update">
         <input type="text" name="clip" />
         <button>save</button>
     </form>
@@ -65,7 +66,10 @@ func handleUpdate(w http.ResponseWriter, r *http.Request) {
 
 func main() {
     port := flag.String("port", "8090", "port")
+    baseUrl := flag.String("base-url", "", "base url")
     flag.Parse()
+
+    pageData.BaseUrl = *baseUrl
 
     http.HandleFunc("GET /", handleRoot)
     http.HandleFunc("POST /update", handleUpdate)
