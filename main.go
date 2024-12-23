@@ -25,7 +25,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
     <title>Clippy</title>
 </head>
 <body>
-    <form method="POST" action="{{ .BaseUrl }}/update">
+    <form method="POST" action="{{ if ne .BaseUrl "/" }}{{ .BaseUrl }}{{ end }}/update">
         <input type="text" name="clip" />
         <button>save</button>
     </form>
@@ -61,18 +61,18 @@ func handleUpdate(w http.ResponseWriter, r *http.Request) {
         }
         pageData.Latest = clip
     }
-    http.Redirect(w, r, "/", http.StatusFound)
+    http.Redirect(w, r, pageData.BaseUrl, http.StatusFound)
 }
 
 func main() {
     port := flag.String("port", "8090", "port")
-    baseUrl := flag.String("base-url", "", "base url")
+    baseUrl := flag.String("base-url", "/", "base url")
     flag.Parse()
 
     pageData.BaseUrl = *baseUrl
 
-    http.HandleFunc("GET /", handleRoot)
-    http.HandleFunc("POST /update", handleUpdate)
+    http.HandleFunc("GET " + pageData.BaseUrl, handleRoot)
+    http.HandleFunc("POST " + pageData.BaseUrl + "/update", handleUpdate)
 
     log.Println("starting server on port " + *port)
     http.ListenAndServe(":" + *port, nil)
