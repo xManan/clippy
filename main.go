@@ -17,7 +17,14 @@ var pageData PageData
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
     if r.URL.Path == "/" {
-        html := `<!DOCTYPE html>
+        handleIndex(w, r)
+        return
+    }
+    http.NotFound(w, r)
+}
+
+func handleIndex(w http.ResponseWriter, r *http.Request) {
+    html := `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -25,7 +32,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
     <title>Clippy</title>
 </head>
 <body>
-    <form method="POST" action="{{ if ne .BaseUrl "/" }}{{ .BaseUrl }}{{ end }}/update">
+    <form method="POST" action="{{ .BaseUrl }}/update">
         <input type="text" name="clip" />
         <button>save</button>
     </form>
@@ -38,19 +45,17 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 </body>
 </html>
 `
-        tmpl, err := template.New("index").Parse(html)
-        if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
-        err = tmpl.Execute(w, pageData)
-        if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
+    tmpl, err := template.New("index").Parse(html)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
-    http.NotFound(w, r)
+    err = tmpl.Execute(w, pageData)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    return
 }
 
 func handleUpdate(w http.ResponseWriter, r *http.Request) {
@@ -66,12 +71,20 @@ func handleUpdate(w http.ResponseWriter, r *http.Request) {
 
 func main() {
     port := flag.String("port", "8090", "port")
-    baseUrl := flag.String("base-url", "/", "base url")
+    baseUrl := flag.String("base-url", "", "base url")
     flag.Parse()
+
+    if *baseUrl == "/" {
+        *baseUrl = ""
+    }
 
     pageData.BaseUrl = *baseUrl
 
-    http.HandleFunc("GET " + pageData.BaseUrl, handleRoot)
+    if pageData.BaseUrl == "" {
+        http.HandleFunc("GET /", handleRoot)
+    } else {
+        http.HandleFunc("GET " + pageData.BaseUrl, handleIndex)
+    }
     http.HandleFunc("POST " + pageData.BaseUrl + "/update", handleUpdate)
 
     log.Println("starting server on port " + *port)
