@@ -5,6 +5,7 @@ import (
     "net/http"
     "flag"
     "log"
+    "fmt"
 )
 
 type PageData struct {
@@ -69,6 +70,10 @@ func handleUpdate(w http.ResponseWriter, r *http.Request) {
     http.Redirect(w, r, pageData.BaseUrl, http.StatusFound)
 }
 
+func handleGetLatest(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, pageData.Latest)
+}
+
 func main() {
     port := flag.String("port", "8090", "port")
     baseUrl := flag.String("base-url", "", "base url")
@@ -86,6 +91,7 @@ func main() {
         http.HandleFunc("GET " + pageData.BaseUrl, handleIndex)
     }
     http.HandleFunc("POST " + pageData.BaseUrl + "/update", handleUpdate)
+    http.HandleFunc("GET " + pageData.BaseUrl + "/latest", handleGetLatest)
 
     log.Println("starting server on port " + *port)
     http.ListenAndServe(":" + *port, nil)
